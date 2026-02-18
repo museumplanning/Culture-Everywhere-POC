@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Intelligence — Culture Everywhere</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#1A1410; --paper:#F5F0E8; --red:#8C1C13; --red-deep:#5C0E0E;
+  --gold:#C9A84C; --gold-dim:rgba(201,168,76,0.2);
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'DM Mono','Courier New',monospace;
+}
+
+body{background:var(--ink);color:var(--paper);font-family:var(--mono);min-height:100vh;overflow-x:hidden;}
+
+/* grain */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:0.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* canvas bg */
+canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.55;}
+
+/* ── ENTRY ── */
+#entry{
+  position:relative;z-index:10;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;
+}
+.entry-inner{max-width:520px;width:100%;}
+.eyebrow{font-size:0.56rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
+h1.hero{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.2rem);line-height:1;color:var(--paper);margin-bottom:0.5rem;}
+h1.hero em{color:var(--red);font-style:normal;}
+.sub{font-size:0.7rem;line-height:1.8;color:rgba(245,240,232,0.38);margin-bottom:2rem;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;}
+.field-label{font-size:0.5rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(245,240,232,0.3);margin-bottom:0.3rem;display:block;}
+.field-input{width:100%;background:rgba(245,240,232,0.04);border:1px solid rgba(245,240,232,0.1);color:var(--paper);font-family:var(--serif);font-size:1.05rem;font-style:italic;padding:0.65rem 0.9rem;outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--gold);}
+.field-input::placeholder{color:rgba(245,240,232,0.2);}
+.go-btn{width:100%;background:var(--red);border:none;color:var(--paper);font-family:var(--mono);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;padding:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.75rem;transition:background 0.2s;}
+.go-btn:hover{background:#a8221a;}
+.diamond{display:inline-block;width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0;}
+
+/* ── DEMO ── */
+#demo{position:relative;z-index:10;display:none;min-height:100vh;grid-template-rows:auto 1fr auto;}
+
+/* header */
+.mast{
+  padding:2rem 2.5rem 0;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.wordmark{display:flex;flex-direction:column;gap:0.1rem;}
+.wordmark-top{font-family:var(--serif);font-size:0.95rem;font-style:italic;color:var(--gold);letter-spacing:0.05em;}
+.wordmark-main{font-family:var(--serif);font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;color:var(--paper);line-height:1;}
+.wordmark-main em{color:var(--red);font-style:normal;}
+.mast-right{text-align:right;font-size:0.52rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(245,240,232,0.3);line-height:1.9;}
+.reset-btn{background:none;border:1px solid rgba(245,240,232,0.12);color:rgba(245,240,232,0.3);font-family:var(--mono);font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.3rem 0.7rem;cursor:pointer;margin-top:0.4rem;display:inline-block;transition:all 0.2s;}
+.reset-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* progress */
+.prog{height:2px;background:rgba(245,240,232,0.05);overflow:hidden;margin-top:1.5rem;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));width:0%;transition:width 0.5s ease;}
+
+/* ── MAIN GRID ── */
+.main-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  padding:2rem 2.5rem;
+  align-items:start;
+  min-height:calc(100vh - 120px);
+}
+
+/* ── LEFT: COLLAGE ── */
+.collage-panel{
+  padding-right:2.5rem;
+  border-right:1px solid rgba(201,168,76,0.12);
+  position:relative;
+}
+
+.collage-label{font-size:0.52rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem;}
+.collage-label::after{content:'';flex:1;height:1px;background:var(--gold-dim);}
+
+/* The collage itself — photos scattered like prints on a table */
+.collage-stage{
+  position:relative;
+  height:440px;
+  margin-bottom:1.5rem;
+}
+
+.collage-photo{
+  position:absolute;
+  cursor:pointer;
+  transition:transform 0.35s ease, box-shadow 0.35s ease, z-index 0s;
+  box-shadow:0 4px 24px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4);
+}
+.collage-photo:hover{
+  z-index:50!important;
+  box-shadow:0 12px 40px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.5);
+  transform:scale(1.05) rotate(0deg)!important;
+}
+.collage-photo img{
+  display:block;width:100%;height:100%;object-fit:cover;
+  filter:sepia(0.4) contrast(1.1) brightness(0.82);
+  transition:filter 0.3s;
+}
+.collage-photo:hover img{filter:sepia(0.1) contrast(1.05) brightness(0.95);}
+
+/* thin cream border like a photo print */
+.collage-photo::before{
+  content:'';position:absolute;inset:0;
+  border:6px solid rgba(245,240,232,0.08);
+  z-index:2;pointer-events:none;
+}
+/* caption strip at bottom of each photo */
+.collage-caption{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top,rgba(26,20,16,0.95),transparent);
+  padding:1.5rem 0.6rem 0.5rem;
+  z-index:3;
+}
+.collage-cap-date{font-size:0.4rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);opacity:0.65;margin-bottom:0.1rem;}
+.collage-cap-title{font-family:var(--serif);font-style:italic;font-size:0.62rem;line-height:1.2;color:rgba(245,240,232,0.75);}
+
+/* skeleton collage pieces */
+.collage-skel{
+  position:absolute;
+  background:repeating-linear-gradient(45deg,rgba(245,240,232,0.02) 0,rgba(245,240,232,0.02) 1px,transparent 1px,transparent 8px);
+  border:1px solid rgba(245,240,232,0.06);
+  display:flex;align-items:center;justify-content:center;
+}
+.skel-txt{font-size:0.42rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,232,0.1);}
+
+/* data mosaic */
+.data-mosaic{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:1px;background:rgba(201,168,76,0.08);
+  border:1px solid rgba(201,168,76,0.08);margin-bottom:1rem;
+}
+.mosaic-cell{background:rgba(26,20,16,0.6);padding:0.6rem 0.75rem;}
+.mosaic-num{font-family:var(--serif);font-size:1.4rem;font-weight:700;color:var(--red);line-height:1;margin-bottom:0.15rem;}
+.mosaic-label{font-size:0.42rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,232,0.3);line-height:1.4;}
+
+/* curation note */
+.curate-note{
+  font-size:0.5rem;line-height:1.7;color:rgba(245,240,232,0.22);
+  border-left:2px solid rgba(201,168,76,0.25);padding-left:0.75rem;margin-top:0.5rem;
+}
+.curate-note strong{color:rgba(201,168,76,0.5);font-weight:400;}
+
+/* ── RIGHT: STORY ── */
+.story-panel{padding-left:2.5rem;}
+
+.panel-label{font-size:0.52rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem;}
+.panel-label::after{content:'';flex:1;height:1px;background:var(--gold-dim);}
+
+/* idle state */
+.idle-state{min-height:200px;display:flex;flex-direction:column;justify-content:center;opacity:0.35;}
+.idle-city{font-family:var(--serif);font-size:4rem;font-style:italic;color:var(--red);line-height:0.9;margin-bottom:0.75rem;}
+.idle-sub{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(245,240,232,0.5);}
+
+/* story text */
+.story-output{min-height:240px;position:relative;margin-bottom:1.5rem;}
+.story-text{font-family:var(--serif);font-size:1.05rem;line-height:1.85;color:var(--paper);opacity:0;transform:translateY(6px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.story-text.visible{opacity:1;transform:translateY(0);}
+.story-text em{color:var(--gold);font-style:italic;}
+.story-text strong{color:rgba(200,80,60,0.9);font-weight:400;}
+
+.cursor-blink{display:inline-block;width:2px;height:1.1em;background:var(--gold);margin-left:2px;vertical-align:middle;animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* thread tags */
+.thread-row{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.25rem;}
+.thread-tag{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.18);color:rgba(245,240,232,0.5);font-family:var(--mono);font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.35rem 0.7rem;cursor:pointer;transition:all 0.2s;}
+.thread-tag:hover,.thread-tag.active{background:rgba(201,168,76,0.15);border-color:var(--gold);color:var(--gold);}
+
+/* status bar */
+.status-row{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;}
+.status-fill-wrap{flex:1;height:1px;background:rgba(245,240,232,0.08);overflow:hidden;}
+.status-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));width:0%;transition:width 6s ease-out;}
+.status-txt{font-size:0.46rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(245,240,232,0.25);white-space:nowrap;}
+
+/* question */
+.q-wrap-row{display:flex;gap:0.6rem;align-items:flex-end;}
+.q-inner{flex:1;}
+.q-label{font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(245,240,232,0.22);margin-bottom:0.3rem;display:block;}
+.q-input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(245,240,232,0.13);color:var(--paper);font-family:var(--serif);font-size:1rem;font-style:italic;padding:0.5rem 0;outline:none;transition:border-bottom-color 0.2s;caret-color:var(--gold);}
+.q-input:focus{border-bottom-color:var(--gold);}
+.q-input::placeholder{color:rgba(245,240,232,0.17);}
+.ask-btn{background:var(--red);border:none;color:var(--paper);font-family:var(--mono);font-size:0.56rem;letter-spacing:0.18em;text-transform:uppercase;padding:0.7rem 1.2rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:0.45rem;transition:background 0.2s;}
+.ask-btn:hover{background:#a8221a;}
+.ask-btn.loading{opacity:0.5;pointer-events:none;}
+
+/* suggested prompts */
+.suggest-row{margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.4rem;}
+.suggest-chip{background:transparent;border:none;color:rgba(245,240,232,0.25);font-family:var(--mono);font-size:0.48rem;cursor:pointer;padding:0.25rem 0;text-align:left;transition:color 0.2s;}
+.suggest-chip::before{content:'→ ';color:var(--red);opacity:0.5;}
+.suggest-chip:hover{color:var(--paper);}
+
+/* timeline strip */
+.timeline-strip{
+  border-top:1px solid rgba(245,240,232,0.07);
+  padding:0.75rem 2.5rem 1rem;
+  display:flex;overflow-x:auto;gap:0;scrollbar-width:none;
+}
+.timeline-strip::-webkit-scrollbar{display:none;}
+.tl-item{flex-shrink:0;padding:0.35rem 1rem 0.35rem 0;border-right:1px solid rgba(245,240,232,0.08);margin-right:1rem;cursor:pointer;}
+.tl-item:last-child{border-right:none;}
+.tl-year{font-size:0.46rem;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.1rem;}
+.tl-event{font-family:var(--serif);font-size:0.72rem;font-style:italic;color:rgba(245,240,232,0.45);max-width:110px;line-height:1.3;transition:color 0.2s;}
+.tl-item:hover .tl-event{color:var(--paper);}
+
+/* footer */
+footer{padding:0.75rem 2.5rem;border-top:1px solid rgba(245,240,232,0.06);display:flex;justify-content:space-between;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.18);}
+footer a{color:var(--gold);text-decoration:none;opacity:0.5;}
+footer a:hover{opacity:1;}
+
+/* lightbox */
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;padding:2rem;cursor:pointer;}
+#lightbox.open{display:flex;}
+#lightbox img{max-width:88vw;max-height:72vh;object-fit:contain;filter:sepia(0.15);box-shadow:0 8px 60px rgba(0,0,0,0.8);}
+#lightbox-cap{margin-top:1rem;font-family:var(--serif);font-style:italic;font-size:0.85rem;color:rgba(245,240,232,0.65);text-align:center;max-width:560px;}
+#lightbox-close{position:absolute;top:1.5rem;right:2rem;background:none;border:none;color:rgba(245,240,232,0.35);font-size:1.4rem;cursor:pointer;}
+#lightbox-close:hover{color:var(--paper);}
+
+@media(max-width:800px){
+  .main-grid{grid-template-columns:1fr;padding:1.5rem;}
+  .collage-panel{padding-right:0;border-right:none;border-bottom:1px solid rgba(201,168,76,0.12);padding-bottom:2rem;margin-bottom:2rem;}
+  .story-panel{padding-left:0;}
+  .field-row{grid-template-columns:1fr;}
+  .mast{flex-direction:column;gap:0.5rem;}
+  .mast-right{text-align:left;}
+  .collage-stage{height:300px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<!-- ENTRY -->
+<div id="entry">
+  <div class="entry-inner">
+    <div class="eyebrow">Culture Everywhere · Community Intelligence</div>
+    <h1 class="hero">Every city<br>has a <em>story.</em></h1>
+    <p class="sub">Enter any US city. Historic photographs surface from the archive. The AI reads the place and speaks its character back — what it is, what it feels like, what made it particular.</p>
+    <div class="field-row">
+      <div>
+        <label class="field-label">City</label>
+        <input class="field-input" id="inp-city" value="McDonough" placeholder="McDonough">
+      </div>
+      <div>
+        <label class="field-label">State</label>
+        <input class="field-input" id="inp-state" value="Georgia" placeholder="Georgia">
+      </div>
+    </div>
+    <button class="go-btn" onclick="startDemo()">
+      <span class="diamond"></span>Enter the City<span class="diamond"></span>
+    </button>
+  </div>
+</div>
+
+<!-- DEMO -->
+<div id="demo">
+
+  <div class="mast">
+    <div class="wordmark">
+      <div class="wordmark-top">Community Intelligence</div>
+      <div class="wordmark-main" id="mast-city">—</div>
+    </div>
+    <div class="mast-right">
+      Wikimedia Commons · Public Domain<br>
+      Culture Everywhere · Museum Planning<br>
+      <button class="reset-btn" onclick="resetToEntry()">↩ Change City</button>
+    </div>
+  </div>
+
+  <div class="prog"><div class="prog-fill" id="prog-fill"></div></div>
+
+  <div class="main-grid">
+
+    <!-- LEFT: COLLAGE + STATS -->
+    <div class="collage-panel">
+      <div class="collage-label">From the Archive</div>
+
+      <div class="collage-stage" id="collage-stage">
+        <!-- photos placed by JS -->
+      </div>
+
+      <div class="data-mosaic" id="data-mosaic" style="display:none">
+        <div class="mosaic-cell"><div class="mosaic-num" id="stat-founded">—</div><div class="mosaic-label">Year Founded</div></div>
+        <div class="mosaic-cell"><div class="mosaic-num" id="stat-pop">—</div><div class="mosaic-label">Population</div></div>
+        <div class="mosaic-cell"><div class="mosaic-num" id="stat-photos">—</div><div class="mosaic-label">Archive Photos</div></div>
+        <div class="mosaic-cell"><div class="mosaic-num" id="stat-dist">—</div><div class="mosaic-label">Miles to Metro</div></div>
+        <div class="mosaic-cell"><div class="mosaic-num" id="stat-era">WPA</div><div class="mosaic-label">Defining Era</div></div>
+        <div class="mosaic-cell"><div class="mosaic-num" id="stat-county">—</div><div class="mosaic-label">County Seat</div></div>
+      </div>
+
+      <div class="curate-note" id="curate-note" style="display:none">
+        <strong>Note on curation:</strong> These photographs are pulled automatically from public archives. Some images — like monuments that have been removed, or places that carry contested histories — require human editorial judgment before use in a community context. This is the layer no algorithm provides.
+      </div>
+    </div>
+
+    <!-- RIGHT: STORY -->
+    <div class="story-panel">
+      <div class="panel-label">What the City Says</div>
+
+      <div class="idle-state" id="idle-state">
+        <div class="idle-city" id="idle-city">—</div>
+        <div class="idle-sub">Searching the archive</div>
+      </div>
+
+      <div class="story-output">
+        <div class="story-text" id="story-text"></div>
+      </div>
+
+      <div class="thread-row" id="thread-row" style="display:none">
+        <!-- thread tags injected by JS -->
+      </div>
+
+      <div class="status-row">
+        <div class="status-fill-wrap"><div class="status-fill" id="status-fill"></div></div>
+        <div class="status-txt" id="status-txt">Ready</div>
+      </div>
+
+      <div class="q-wrap-row">
+        <div class="q-inner">
+          <span class="q-label">Ask the city anything</span>
+          <input class="q-input" id="q-input"
+            placeholder="What makes this place different? What would a museum here feel like?"
+            onkeydown="if(event.key==='Enter') handleAsk()">
+        </div>
+        <button class="ask-btn" id="ask-btn" onclick="handleAsk()">
+          <span class="diamond"></span>Ask
+        </button>
+      </div>
+
+      <div class="suggest-row" id="suggest-row"></div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+  <div class="timeline-strip" id="timeline"></div>
+
+  <footer>
+    <span>Culture Everywhere · Museum Planning LLC · Proof of Concept</span>
+    <span><a href="https://culture-planning.com" target="_blank">culture-planning.com</a></span>
+  </footer>
+
+</div><!-- /demo -->
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-cap"></div>
+</div>
+
+<script>
+'use strict';
+
+// ── STATE ──
+let CITY = '', STATE = '', thinking = false, loadedPhotos = [];
+
+// ── CONTENT BLOCKLIST ──
+// Filenames or title fragments to exclude.
+// Requires human curation — this list is a starting point, not comprehensive.
+const BLOCKED_FILENAMES = [
+  'Confederate_Memorial',
+  'Confederate Memorial',
+  'confederate_memorial',
+];
+const BLOCKED_TITLE_WORDS = [
+  /\bconfederate\b/i,
+  /\bklan\b/i,
+];
+
+function isBlocked(photo) {
+  for (const f of BLOCKED_FILENAMES) {
+    if (photo.filename.includes(f)) return true;
+  }
+  for (const re of BLOCKED_TITLE_WORDS) {
+    if (re.test(photo.title)) return true;
+  }
+  return false;
+}
+
+// ── COLLAGE LAYOUT CONFIGS ──
+// Each position: [left%, top%, width px, height px, rotation deg, zIndex]
+const POSITIONS = [
+  [2,  2,  220, 280, -2.5, 5],
+  [30, 5,  170, 220,  1.8, 4],
+  [55, 0,  190, 240, -1.2, 3],
+  [8,  48, 185, 220,  2.1, 6],
+  [38, 42, 175, 215, -1.5, 4],
+  [60, 40, 180, 220,  2.8, 5],
+];
+const SKEL_LABELS = ['COURTHOUSE','TOWN SQUARE','POST OFFICE','MAIN STREET','COMMUNITY','ARCHIVE'];
+
+// ── WIKI API ──
+async function fetchCategory(categoryName, limit = 8) {
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(categoryName)}&gcmnamespace=6&gcmlimit=${limit}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=700&format=json&origin=*`;
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    return Object.values(d?.query?.pages || {})
+      .filter(p => p.imageinfo?.[0]?.url)
+      .filter(p => !/\.(svg|ogg|ogv|webm|pdf|tif|tiff)$/i.test(p.title))
+      .map(p => {
+        const info = p.imageinfo[0];
+        const meta = info.extmetadata || {};
+        const rawDesc = (meta.ImageDescription?.value || '').replace(/<[^>]+>/g, '');
+        return {
+          thumb: info.thumburl || info.url,
+          full: info.url,
+          title: rawDesc.slice(0, 90) || p.title.replace('File:', '').replace(/_/g, ' ').replace(/\.[^.]+$/, '').slice(0, 80),
+          date: (meta.DateTimeOriginal?.value || meta.DateTime?.value || '').slice(0, 4),
+          filename: p.title,
+        };
+      });
+  } catch { return []; }
+}
+
+async function loadPhotosForCity(city, state) {
+  const cats = [
+    `${city} Historic District`,
+    `${city}, ${state}`,
+    `Buildings in ${city}, ${state}`,
+    `History of ${city}, ${state}`,
+  ];
+  const sets = await Promise.all(cats.map(c => fetchCategory(c, 6)));
+  let all = [];
+  sets.forEach(s => all.push(...s));
+
+  // Deduplicate
+  const seen = new Set();
+  all = all.filter(p => {
+    if (seen.has(p.filename)) return false;
+    seen.add(p.filename); return true;
+  });
+
+  // Apply blocklist + filter maps
+  all = all.filter(p => !isBlocked(p) && !/\bmap\b/i.test(p.title));
+
+  return all.slice(0, 6);
+}
+
+// ── COLLAGE RENDER ──
+function renderSkeletons() {
+  const stage = document.getElementById('collage-stage');
+  stage.innerHTML = POSITIONS.map((pos, i) => {
+    const [l, t, w, h, rot, z] = pos;
+    return `<div class="collage-skel" style="left:${l}%;top:${t}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg);z-index:${z}"><span class="skel-txt">${SKEL_LABELS[i]}</span></div>`;
+  }).join('');
+}
+
+function renderCollage(photos) {
+  const stage = document.getElementById('collage-stage');
+  const cards = POSITIONS.map((pos, i) => {
+    const [l, t, w, h, rot, z] = pos;
+    if (!photos[i]) {
+      return `<div class="collage-skel" style="left:${l}%;top:${t}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg);z-index:${z}"><span class="skel-txt">ARCHIVE</span></div>`;
+    }
+    const p = photos[i];
+    const safeFull = encodeURIComponent(p.full);
+    const safeTitle = p.title.replace(/'/g, "&#39;");
+    return `
+      <div class="collage-photo" style="left:${l}%;top:${t}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg);z-index:${z}"
+           onclick="openLightbox('${safeFull}','${safeTitle}')">
+        <img src="${p.thumb}" alt="${safeTitle}" loading="lazy"
+             onerror="this.closest('.collage-photo').style.display='none'">
+        <div class="collage-caption">
+          <div class="collage-cap-date">Wikimedia Commons${p.date ? ' · ' + p.date : ''}</div>
+          <div class="collage-cap-title">${p.title.slice(0, 55)}</div>
+        </div>
+      </div>`;
+  });
+  stage.innerHTML = cards.join('');
+}
+
+// ── CITY DATA ── (expandable lookup table per city)
+const CITY_DATA = {
+  'mcdonough': { founded: '1823', pop: '30K', dist: '30', county: 'Henry' },
+  'default':   { founded: '—',    pop: '—',   dist: '—', county: '—'    },
+};
+
+function fillMosaic(photoCount) {
+  const key = CITY.toLowerCase().replace(/\s+/g,'');
+  const d = CITY_DATA[key] || CITY_DATA.default;
+  document.getElementById('stat-founded').textContent = d.founded;
+  document.getElementById('stat-pop').textContent = d.pop;
+  document.getElementById('stat-photos').textContent = photoCount;
+  document.getElementById('stat-dist').textContent = d.dist;
+  document.getElementById('stat-county').textContent = d.county;
+  document.getElementById('data-mosaic').style.display = 'grid';
+  document.getElementById('curate-note').style.display = 'block';
+}
+
+// ── THREAD TAGS ──
+const THREADS = [
+  { label: 'Character', q: 'What is the character and feeling of this city? What makes it particular?' },
+  { label: 'The Square', q: 'Tell me about the town square — its civic role, what happens there.' },
+  { label: 'WPA Era', q: 'What happened here during the New Deal and WPA era in the 1930s–1940s?' },
+  { label: 'The Mural', q: 'Tell me about any public art or murals in this city — their history and meaning.' },
+  { label: 'Civil Rights', q: 'What is the civil rights history of this place? What happened here?' },
+  { label: 'Museum', q: 'If this city were to build a community museum, what should it hold and feel like?' },
+];
+
+function buildThreads() {
+  const row = document.getElementById('thread-row');
+  row.innerHTML = THREADS.map(t =>
+    `<div class="thread-tag" onclick="quickAsk(this,'${t.q.replace(/'/g,"&#39;")}')">${t.label}</div>`
+  ).join('');
+  row.style.display = 'flex';
+}
+
+function quickAsk(el, q) {
+  document.querySelectorAll('.thread-tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  interpret(q);
+}
+
+// ── SUGGEST CHIPS ──
+const SUGGESTS = [
+  'What makes this place different from a suburb?',
+  'What would the museum smell like?',
+  'What do people talk about at breakfast here?',
+  'Why does this place still have a heart?',
+];
+
+function buildSuggests() {
+  document.getElementById('suggest-row').innerHTML = SUGGESTS.map(s =>
+    `<button class="suggest-chip" onclick="loadSuggest(this)">${s}</button>`
+  ).join('');
+}
+
+function loadSuggest(btn) {
+  document.getElementById('q-input').value = btn.textContent;
+  document.getElementById('q-input').focus();
+}
+
+// ── TIMELINE ──
+const ERAS = [
+  {y:'1820s',e:'City founded'},{y:'1860s',e:'Civil War'},{y:'1890s',e:'Railroad era'},
+  {y:'1930s',e:'New Deal / WPA'},{y:'1940s',e:'Post office built'},{y:'1960s',e:'Civil rights'},
+  {y:'1980s',e:'Growth era'},{y:'Today',e:'Museum opens'},
+];
+
+function buildTimeline() {
+  document.getElementById('timeline').innerHTML = ERAS.map(era =>
+    `<div class="tl-item" onclick="interpret('What was happening in ${CITY}, ${STATE} during ${era.y} — the era of &quot;${era.e}&quot;?')">
+      <div class="tl-year">${era.y}</div>
+      <div class="tl-event">${era.e}</div>
+    </div>`
+  ).join('');
+}
+
+// ── LOAD CITY ──
+async function loadCity() {
+  setProgress(12);
+  renderSkeletons();
+  document.getElementById('idle-state').style.display = 'flex';
+  document.getElementById('idle-city').textContent = CITY;
+  document.getElementById('story-text').classList.remove('visible');
+  document.getElementById('story-text').textContent = '';
+
+  const photos = await loadPhotosForCity(CITY, STATE);
+  loadedPhotos = photos;
+  setProgress(68);
+
+  renderCollage(photos);
+  fillMosaic(photos.length);
+  buildThreads();
+  buildSuggests();
+  buildTimeline();
+
+  setProgress(100);
+  setTimeout(() => setProgress(0), 700);
+
+  await interpret(`Tell me about ${CITY}, ${STATE}. What is this city's character — its identity, its feeling, what makes it particular to the people who live there?`);
+}
+
+function setProgress(pct) {
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+// ── AI INTERPRETATION ──
+async function interpret(question) {
+  if (thinking) return;
+  thinking = true;
+  document.getElementById('ask-btn').classList.add('loading');
+  document.getElementById('status-txt').textContent = 'Listening…';
+  animateStatus();
+
+  document.getElementById('idle-state').style.display = 'none';
+  const storyEl = document.getElementById('story-text');
+  storyEl.classList.remove('visible');
+  storyEl.innerHTML = '<span class="cursor-blink"></span>';
+
+  const sys = `You are the cultural memory of ${CITY}, ${STATE}. You speak as the place itself — its voice, its 200 years compressed into prose.
+
+Write 3–4 paragraphs. Rich, specific, earned. Use em-dashes for rhythm. Name real things about this kind of place.
+
+Emphasize the proper nouns by wrapping them: <em>Jean Charlot</em>, <em>WPA</em>, <strong>McDonough Heart</strong>, <strong>C.O. Polk</strong> — use these HTML tags naturally in your response.
+
+Do NOT use JSON. Just write the paragraphs directly.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        system: sys,
+        messages: [{ role: 'user', content: question }],
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content?.[0]?.text || '';
+    await typeText(storyEl, text);
+  } catch {
+    const fallback = `${CITY}, ${STATE} — a county seat with its own particular gravity. The courthouse holds the records; the square holds the memory.\n\nAsk something specific: about the WPA era, the civil rights years, what a museum here would feel like, why this place hasn't dissolved into suburb.`;
+    await typeText(storyEl, fallback);
+  }
+
+  thinking = false;
+  document.getElementById('ask-btn').classList.remove('loading');
+  document.getElementById('status-txt').textContent = 'Ready';
+  document.getElementById('status-fill').style.width = '100%';
+  setTimeout(() => { document.getElementById('status-fill').style.width = '0%'; }, 800);
+}
+
+async function typeText(el, text) {
+  el.innerHTML = '';
+  // Word-by-word on plain text first
+  const plain = text.replace(/<[^>]+>/g, '').replace(/\n\n/g, ' ');
+  const words = plain.split(' ');
+  let built = '';
+  for (let i = 0; i < words.length; i++) {
+    built += (i > 0 ? ' ' : '') + words[i];
+    el.textContent = built;
+    await sleep(18);
+  }
+  // Then swap to rich HTML
+  await sleep(120);
+  let html = text
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/McDonough Heart/g, '<strong>McDonough Heart</strong>')
+    .replace(/Jean Charlot/g, '<em>Jean Charlot</em>')
+    .replace(/\bWPA\b/g, '<em>WPA</em>')
+    .replace(/C\.O\. Polk/g, '<strong>C.O. Polk</strong>')
+    .replace(/SPLOST/g, '<em>SPLOST</em>');
+  el.innerHTML = html;
+  el.classList.add('visible');
+}
+
+function handleAsk() {
+  const q = document.getElementById('q-input').value.trim();
+  if (!q || thinking) return;
+  document.querySelectorAll('.thread-tag').forEach(t => t.classList.remove('active'));
+  interpret(q);
+  document.getElementById('q-input').value = '';
+}
+
+function animateStatus() {
+  const fill = document.getElementById('status-fill');
+  fill.style.transition = 'none'; fill.style.width = '0%';
+  requestAnimationFrame(() => {
+    fill.style.transition = 'width 6s ease-out'; fill.style.width = '85%';
+  });
+}
+
+// ── ENTRY / RESET ──
+document.getElementById('inp-city').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-state').focus(); });
+document.getElementById('inp-state').addEventListener('keydown', e => { if (e.key === 'Enter') startDemo(); });
+
+function startDemo() {
+  CITY  = document.getElementById('inp-city').value.trim()  || 'McDonough';
+  STATE = document.getElementById('inp-state').value.trim() || 'Georgia';
+  document.getElementById('entry').style.display = 'none';
+  const demo = document.getElementById('demo');
+  demo.style.display = 'grid';
+  document.getElementById('mast-city').innerHTML = `<em>${CITY}</em>, ${STATE}`;
+  document.title = `${CITY} — Community Intelligence`;
+  loadCity();
+}
+
+function resetToEntry() {
+  document.getElementById('entry').style.display = 'flex';
+  document.getElementById('demo').style.display = 'none';
+}
+
+// ── LIGHTBOX ──
+function openLightbox(enc, cap) {
+  document.getElementById('lightbox-img').src = decodeURIComponent(enc);
+  document.getElementById('lightbox-cap').textContent = cap;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ── CANVAS BACKGROUND ──
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], time = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initParticles() {
+  particles = [];
+  const n = Math.floor((W * H) / 16000);
+  for (let i = 0; i < n; i++) {
+    particles.push({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.08,
+      size: Math.random() * 1.4 + 0.3,
+      alpha: Math.random() * 0.35 + 0.05,
+      hue: Math.random() < 0.3 ? 'gold' : 'red',
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function drawBg() {
+  ctx.clearRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(W * 0.35, H * 0.4, 0, W * 0.35, H * 0.4, W * 0.8);
+  g.addColorStop(0,   'rgba(92,14,14,0.35)');
+  g.addColorStop(0.5, 'rgba(26,20,16,0.6)');
+  g.addColorStop(1,   'rgba(10,10,8,0.9)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // slow waves
+  ctx.lineWidth = 0.4;
+  for (let row = 0; row < 8; row++) {
+    const y = (H / 9) * (row + 1);
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(139,26,26,${0.035 + row * 0.005})`;
+    for (let x = 0; x <= W; x += 4) {
+      const wave = Math.sin((x / W) * Math.PI * 3 + time * 0.28 + row * 0.7) * 11;
+      x === 0 ? ctx.moveTo(x, y + wave) : ctx.lineTo(x, y + wave);
+    }
+    ctx.stroke();
+  }
+
+  // particles
+  for (const p of particles) {
+    const pulse = Math.sin(time * 0.5 + p.phase) * 0.12;
+    const a = Math.max(0, p.alpha + pulse);
+    ctx.fillStyle = p.hue === 'gold' ? `rgba(201,168,76,${a})` : `rgba(139,26,26,${a * 1.5})`;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+  }
+
+  time += 0.008;
+  requestAnimationFrame(drawBg);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+window.addEventListener('resize', () => { resize(); initParticles(); });
+resize(); initParticles(); drawBg();
+</script>
+</body>
+</html>
