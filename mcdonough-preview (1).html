@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>McDonough Heart — Community Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #8B1A1A;
+    --red-deep: #5C0E0E;
+    --red-warm: #A0281A;
+    --red-glow: rgba(139, 26, 26, 0.15);
+    --cream: #F5F0E8;
+    --cream-dark: #E8DFD0;
+    --ink: #1A1410;
+    --ink-mid: #3D2E22;
+    --gold: #C9A84C;
+    --gold-dim: rgba(201, 168, 76, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  canvas#bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .shell {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  header {
+    padding: 2.5rem 3rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .wordmark { display: flex; flex-direction: column; gap: 0.1rem; }
+
+  .wordmark-top {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+
+  .wordmark-main {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--cream);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .wordmark-main span { color: var(--red-warm); }
+
+  .header-meta {
+    text-align: right;
+    font-size: 0.65rem;
+    color: rgba(245, 240, 232, 0.35);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1.8;
+    padding-top: 0.3rem;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 3rem;
+    padding-top: 2rem;
+    align-items: start;
+  }
+
+  .story-panel {
+    padding-right: 3rem;
+    border-right: 1px solid rgba(201, 168, 76, 0.15);
+  }
+
+  .panel-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gold-dim);
+  }
+
+  .story-output { min-height: 320px; position: relative; }
+
+  .story-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    line-height: 1.85;
+    color: var(--cream);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .story-text.visible { opacity: 1; transform: translateY(0); }
+
+  .story-text em { color: var(--gold); font-style: italic; }
+  .story-text strong { color: var(--red-warm); font-weight: 400; }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: var(--gold);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .idle-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 320px;
+    opacity: 0.4;
+  }
+
+  .idle-city {
+    font-family: 'Playfair Display', serif;
+    font-size: 4.5rem;
+    font-style: italic;
+    color: var(--red);
+    line-height: 0.9;
+    margin-bottom: 1rem;
+  }
+
+  .idle-sub {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245, 240, 232, 0.5);
+  }
+
+  .data-mosaic {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.1);
+  }
+
+  .mosaic-cell {
+    background: var(--ink);
+    padding: 1rem 0.85rem;
+    transition: background 0.3s;
+  }
+
+  .mosaic-cell:hover { background: rgba(139, 26, 26, 0.12); }
+
+  .mosaic-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--red-warm);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+
+  .mosaic-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245, 240, 232, 0.4);
+  }
+
+  .threads {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .thread-tag {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    color: rgba(245, 240, 232, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: none;
+  }
+
+  .thread-tag:hover, .thread-tag.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  .interact-panel { padding-left: 3rem; }
+
+  .question-area { margin-bottom: 2rem; }
+
+  .question-prompt {
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .question-prompt::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gold-dim);
+  }
+
+  .question-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.3);
+    color: var(--cream);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    padding: 0.75rem 0;
+    outline: none;
+    transition: border-color 0.3s;
+    caret-color: var(--gold);
+  }
+
+  .question-input::placeholder {
+    color: rgba(245, 240, 232, 0.2);
+    font-style: italic;
+  }
+
+  .question-input:focus { border-bottom-color: var(--gold); }
+
+  .ask-btn {
+    margin-top: 1.25rem;
+    background: var(--red);
+    color: var(--cream);
+    border: none;
+    padding: 0.85rem 2rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ask-btn:hover { background: var(--red-warm); }
+  .ask-btn:active { transform: scale(0.98); }
+  .ask-btn.loading { opacity: 0.6; pointer-events: none; }
+
+  .btn-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+
+  .suggestions { margin-top: 2.5rem; }
+
+  .suggestions-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245, 240, 232, 0.3);
+    margin-bottom: 1rem;
+  }
+
+  .suggestion-item {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    border-left: 2px solid rgba(139, 26, 26, 0.3);
+    color: rgba(245, 240, 232, 0.55);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    text-align: left;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .suggestion-item:hover {
+    border-left-color: var(--red-warm);
+    color: var(--cream);
+    background: var(--red-glow);
+  }
+
+  .mural-block {
+    margin-top: 2.5rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(139, 26, 26, 0.3);
+    background: rgba(139, 26, 26, 0.05);
+    position: relative;
+  }
+
+  .mural-block::before {
+    content: '1940';
+    position: absolute;
+    top: -0.6rem;
+    left: 1.5rem;
+    background: var(--ink);
+    padding: 0 0.5rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+  }
+
+  .mural-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+  }
+
+  .mural-desc {
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: rgba(245, 240, 232, 0.5);
+  }
+
+  .mural-desc em { color: var(--gold); font-style: normal; }
+
+  .status-bar {
+    height: 3px;
+    background: rgba(201, 168, 76, 0.1);
+    margin-top: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .status-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  footer {
+    padding: 1.5rem 3rem;
+    border-top: 1px solid rgba(201, 168, 76, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245, 240, 232, 0.25);
+  }
+
+  .footer-right {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: rgba(245, 240, 232, 0.25);
+  }
+
+  .footer-right a { color: var(--gold); text-decoration: none; opacity: 0.6; }
+  .footer-right a:hover { opacity: 1; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .story-panel { padding-right: 0; border-right: none; border-bottom: 1px solid rgba(201,168,76,0.15); padding-bottom: 2rem; margin-bottom: 2rem; }
+    .interact-panel { padding-left: 0; }
+    header { padding: 1.5rem; }
+    main { padding: 1.5rem; }
+    footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="shell">
+  <header>
+    <div class="wordmark">
+      <div class="wordmark-top">Community Intelligence</div>
+      <div class="wordmark-main">McDonough <span>Heart</span></div>
+    </div>
+    <div class="header-meta">
+      McDonough, Georgia<br>
+      Henry County<br>
+      Est. 1823<br>
+      Pop. 29,500
+    </div>
+  </header>
+
+  <main>
+    <div class="story-panel">
+      <div class="panel-label">Community Story</div>
+
+      <div class="story-output" id="storyOutput">
+        <div class="idle-state" id="idleState">
+          <div class="idle-city">Mc-<br>Don-<br>ough</div>
+          <div class="idle-sub">Ask something about this place</div>
+        </div>
+        <div class="story-text" id="storyText"></div>
+      </div>
+
+      <div class="status-bar"><div class="status-fill" id="statusFill"></div></div>
+
+      <div class="data-mosaic">
+        <div class="mosaic-cell">
+          <div class="mosaic-value">1940</div>
+          <div class="mosaic-label">Post Office Built</div>
+        </div>
+        <div class="mosaic-cell">
+          <div class="mosaic-value">WPA</div>
+          <div class="mosaic-label">Mural Era</div>
+        </div>
+        <div class="mosaic-cell">
+          <div class="mosaic-value">50yr</div>
+          <div class="mosaic-label">Mayor's Legacy</div>
+        </div>
+        <div class="mosaic-cell">
+          <div class="mosaic-value">$1B</div>
+          <div class="mosaic-label">SPLOST Fund</div>
+        </div>
+        <div class="mosaic-cell">
+          <div class="mosaic-value">30K</div>
+          <div class="mosaic-label">Population</div>
+        </div>
+        <div class="mosaic-cell">
+          <div class="mosaic-value">ATL</div>
+          <div class="mosaic-label">30mi South</div>
+        </div>
+      </div>
+
+      <div class="threads">
+        <button class="thread-tag" onclick="quickAsk('jean_charlot')">Jean Charlot Mural</button>
+        <button class="thread-tag" onclick="quickAsk('square')">The Square</button>
+        <button class="thread-tag" onclick="quickAsk('heart')">McDonough Heart</button>
+        <button class="thread-tag" onclick="quickAsk('polk')">C.O. Polk Museum</button>
+        <button class="thread-tag" onclick="quickAsk('community')">Community Life</button>
+        <button class="thread-tag" onclick="quickAsk('schools')">Schools</button>
+      </div>
+    </div>
+
+    <div class="interact-panel">
+      <div class="question-area">
+        <div class="question-prompt">Ask McDonough</div>
+        <input
+          class="question-input"
+          id="questionInput"
+          type="text"
+          placeholder="What does this city feel like?"
+          onkeydown="if(event.key==='Enter') askQuestion()"
+          autocomplete="off"
+        >
+        <button class="ask-btn" id="askBtn" onclick="askQuestion()">
+          <span class="btn-dot"></span>
+          Ask the City
+        </button>
+      </div>
+
+      <div class="suggestions">
+        <div class="suggestions-label">Where to begin</div>
+        <button class="suggestion-item" onclick="loadSuggestion(this)">What is McDonough Heart, and why does it matter?</button>
+        <button class="suggestion-item" onclick="loadSuggestion(this)">Tell me about the 1940 post office and Jean Charlot's mural.</button>
+        <button class="suggestion-item" onclick="loadSuggestion(this)">What would a museum feel like if it grew out of this community?</button>
+        <button class="suggestion-item" onclick="loadSuggestion(this)">Why do people in McDonough talk to each other like they know each other?</button>
+        <button class="suggestion-item" onclick="loadSuggestion(this)">How is McDonough different from a suburb?</button>
+      </div>
+
+      <div class="mural-block">
+        <div class="mural-title">Jean Charlot — WPA Post Office Mural</div>
+        <div class="mural-desc">
+          Painted in <em>1940</em> for the Federal Art Project, the mural anchors the historic post office on McDonough Square. Jean Charlot, a French-Mexican artist celebrated for his work alongside Diego Rivera, created murals for post offices across the American South. This one has been part of the civic fabric of McDonough for over 80 years — the kind of art that becomes invisible because it belongs to the place, until someone decides to make it visible again.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-left">Culture Everywhere · Museum Planning LLC · Proof of Concept</div>
+    <div class="footer-right"><a href="https://culture-planning.com" target="_blank">culture-planning.com</a></div>
+  </footer>
+</div>
+
+<script>
+// Simulated responses — replace with live API call when deploying
+const RESPONSES = {
+  heart: `McDonough Heart isn't a slogan. It isn't something the city decided to call itself at a branding meeting. It's what Mayor Billy Copeland said when he saw a rendering — a deep, Ralph Lauren red wall — and recognized something in it that he'd spent fifty years watching. He said: you've got McDonough Heart. And when pressed to explain it, he said: you interact with people differently here. That's what this city is.\n\nYou feel it immediately when you walk into a diner and everyone is talking to each other. Not because something is happening. Because that's just what this place does. It doesn't perform warmth. It doesn't have to. Thirty miles from Atlanta, it has resisted the flattening that suburban growth usually brings. The square is still the center. People still know each other across lines that in other towns would keep them apart.\n\nThat red wall in the museum isn't decorative. It's an argument. It says: this city has a particular character, and a museum built here should feel like it grew from the ground of this place, not dropped onto it from somewhere else.`,
+
+  jean_charlot: `Jean Charlot came to McDonough the way the New Deal came to a lot of small American cities — quietly, practically, as part of something larger that most people didn't fully understand at the time. He was French-born, Mexican-formed, a muralist who had worked alongside Diego Rivera on the walls of Mexico City before the Federal Art Project sent him across the American South to paint post offices.\n\nThe mural he left in McDonough has been there for more than eighty years. Long enough to become invisible — the way things that truly belong to a place eventually disappear into it. People walked past it to mail letters. Then to pick up packages. Then, when the post office became something else, they walked past it for other reasons. The mural kept watching.\n\nWhat's remarkable about it now is exactly what was remarkable about it then: Charlot painted people who looked like the people of that place. Not allegory. Not mythology. People working, existing, belonging to a specific geography. That's what murals were for. That's what a museum built around this mural can be for — making the invisible visible again.`,
+
+  square: `The square in McDonough is one of those civic spaces that hasn't been reimagined into something it wasn't. It's still a square. The courthouse is still there. People still gather there for the reasons people have always gathered in squares — because that's where things happen, and because being in the same place at the same time as your neighbors is its own kind of meaning.\n\nWhat's unusual about McDonough Square is that the historic post office — WPA-built, Jean Charlot mural inside — sits right there in that civic center. The museum grew out of that building. Which means the museum isn't a destination you drive to from somewhere else. It's already inside the life of the city. You walk past it on the way to other things, the way people walked past the mural for eighty years.\n\nThat's a different kind of museum. Not a temple you make a pilgrimage to. A room that's already part of where you live.`,
+
+  polk: `The C.O. Polk Interactive Museum opened in the 1940 post office on McDonough Square — a WPA-era Federal building with a Jean Charlot mural that had been part of the civic fabric for decades before anyone decided to make it the center of something.\n\nWhat Keith the city manager said he didn't want: dusty. What he'd seen that he did want: a Native American storytelling experience at a local casino that was immersive, alive, that made you feel something. That's the brief. Not an exhibit about the past that you look at behind glass. An experience that pulls you in.\n\nThe museum has a maker space. 3D printing. A kids area with no electronics — deliberately — to let imaginations run without a screen mediating the experience. It has programming tied to the Jean Charlot mural. It has a deep red wall that the mayor recognized as the heart of the place before the planner who designed it had fully articulated what he was doing.\n\nThe museum got built because Mayor Copeland had been in city government for fifty years and wanted to leave something behind. The funding was already appropriated — SPLOST, over a billion dollars available to the city. The decision took fifteen minutes.`,
+
+  community: `There's a thing that happens in McDonough that's hard to explain to someone who hasn't been there. You walk into a hamburger place and everyone is talking to each other. Not the kind of talking where you can tell there was an event earlier — a game, a meeting, something that drew people together. Just talking. Like they know each other. Because they do.\n\nYou notice it again at breakfast the next morning. Same thing. The same ease between people who might, in another city, have no reason to speak. McDonough has grown — it's thirty miles from Atlanta, and suburban pressure doesn't leave places like this alone forever — but the core of it has held. People still know their neighbors. The square is still the square. The connections that a community builds over generations are still visible in the way people behave in diners.\n\nThis is what the museum was built to hold and reflect. Not history as a set of facts. History as the explanation for why this particular place feels the way it does.`,
+
+  schools: `The museum's connection to Henry County schools wasn't optional — it was the condition that made the project real. Without curriculum integration, without programming that tied the museum's content to what kids were already studying, you'd have a beautiful room that adults visited occasionally and children were brought to on field trips they forgot by summer.\n\nWhat the C.O. Polk Museum built instead was daily programming. 3D printing at 3PM on weekdays. Weekend programs at 11 and 3. Summer camps. A kids area designed without electronics — not as a restriction but as a philosophy: let children make things with their hands before they learn to consume things with their eyes.\n\nThe Jean Charlot mural became curriculum. A WPA-era artist who worked with Diego Rivera, who painted the people of this specific place in 1940 — that's not supplementary material. That's a thread that runs from the New Deal through the civil rights era through the present day, all of it visible on one wall in a building on a square where people still gather.`
+};
+
+const DEFAULT_RESPONSE = `McDonough is a city that has managed to stay itself. Thirty miles from Atlanta, it has absorbed growth without being dissolved by it. The square is still the square. The 1940 post office — WPA-built, with a Jean Charlot mural inside — still anchors the civic center. People still know each other in diners.\n\nAsk me something more specific. The mural. The museum. What McDonough Heart means. Why the red wall. I know this place.`;
+
+function loadSuggestion(btn) {
+  document.getElementById('questionInput').value = btn.textContent;
+}
+
+function quickAsk(key) {
+  document.querySelectorAll('.thread-tag').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  respond(RESPONSES[key] || DEFAULT_RESPONSE);
+}
+
+function askQuestion() {
+  const q = document.getElementById('questionInput').value.trim().toLowerCase();
+  if (!q) return;
+
+  let response = DEFAULT_RESPONSE;
+  if (q.includes('heart') || q.includes('feel') || q.includes('different') || q.includes('character')) response = RESPONSES.heart;
+  else if (q.includes('charlot') || q.includes('mural') || q.includes('wpa') || q.includes('post office') || q.includes('1940')) response = RESPONSES.jean_charlot;
+  else if (q.includes('square') || q.includes('downtown') || q.includes('center')) response = RESPONSES.square;
+  else if (q.includes('polk') || q.includes('museum') || q.includes('interactive') || q.includes('dusty')) response = RESPONSES.polk;
+  else if (q.includes('community') || q.includes('people') || q.includes('neighbor') || q.includes('diner') || q.includes('breakfast') || q.includes('suburb')) response = RESPONSES.community;
+  else if (q.includes('school') || q.includes('kid') || q.includes('child') || q.includes('education') || q.includes('curriculum')) response = RESPONSES.schools;
+
+  respond(response);
+}
+
+async function respond(text) {
+  const btn = document.getElementById('askBtn');
+  btn.classList.add('loading');
+  btn.innerHTML = 'Listening...';
+
+  animateStatus();
+  document.getElementById('idleState').style.display = 'none';
+
+  const storyText = document.getElementById('storyText');
+  storyText.classList.remove('visible');
+  storyText.innerHTML = '<span class="cursor-blink"></span>';
+
+  await sleep(400);
+  storyText.classList.add('visible');
+
+  await typeText(storyText, text);
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<span class="btn-dot"></span>Ask the City';
+  document.getElementById('statusFill').style.width = '100%';
+  setTimeout(() => { document.getElementById('statusFill').style.width = '0%'; }, 800);
+}
+
+async function typeText(el, text) {
+  el.innerHTML = '';
+  const paragraphs = text.split('\n\n');
+  let html = '';
+
+  for (let pi = 0; pi < paragraphs.length; pi++) {
+    let p = paragraphs[pi];
+    p = p.replace(/McDonough Heart/g, '<strong>McDonough Heart</strong>');
+    p = p.replace(/Jean Charlot/g, '<em>Jean Charlot</em>');
+    p = p.replace(/WPA/g, '<em>WPA</em>');
+    p = p.replace(/C\.O\. Polk/g, '<strong>C.O. Polk</strong>');
+    p = p.replace(/SPLOST/g, '<em>SPLOST</em>');
+    p = p.replace(/Billy Copeland/g, '<em>Billy Copeland</em>');
+    if (pi > 0) html += '<br><br>';
+    html += p;
+  }
+
+  // Word by word reveal on plain text, then swap to formatted
+  const plain = text.replace(/\n\n/g, ' ');
+  const words = plain.split(' ');
+  let displayed = '';
+
+  for (let i = 0; i < words.length; i++) {
+    displayed += (i > 0 ? ' ' : '') + words[i];
+    el.textContent = displayed;
+    await sleep(22);
+  }
+
+  await sleep(150);
+  el.innerHTML = html;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function animateStatus() {
+  const fill = document.getElementById('statusFill');
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+  requestAnimationFrame(() => {
+    fill.style.transition = 'width 6s ease-out';
+    fill.style.width = '85%';
+  });
+}
+
+// Background canvas
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], time = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initParticles() {
+  particles = [];
+  const count = Math.floor((W * H) / 18000);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.08,
+      size: Math.random() * 1.5 + 0.3,
+      alpha: Math.random() * 0.4 + 0.05,
+      hue: Math.random() < 0.3 ? 'gold' : 'red',
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function drawBg() {
+  ctx.clearRect(0, 0, W, H);
+
+  const grad = ctx.createRadialGradient(W * 0.35, H * 0.4, 0, W * 0.35, H * 0.4, W * 0.8);
+  grad.addColorStop(0, 'rgba(92, 14, 14, 0.35)');
+  grad.addColorStop(0.5, 'rgba(26, 20, 16, 0.6)');
+  grad.addColorStop(1, 'rgba(10, 10, 8, 0.9)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.lineWidth = 0.4;
+  for (let row = 0; row < 8; row++) {
+    const y = (H / 9) * (row + 1);
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(139, 26, 26, ${0.04 + row * 0.005})`;
+    for (let x = 0; x <= W; x += 4) {
+      const wave = Math.sin((x / W) * Math.PI * 3 + time * 0.3 + row * 0.7) * 12;
+      if (x === 0) ctx.moveTo(x, y + wave);
+      else ctx.lineTo(x, y + wave);
+    }
+    ctx.stroke();
+  }
+
+  for (const p of particles) {
+    const pulse = Math.sin(time * 0.5 + p.phase) * 0.15;
+    const a = p.alpha + pulse;
+    ctx.fillStyle = p.hue === 'gold'
+      ? `rgba(201, 168, 76, ${a})`
+      : `rgba(139, 26, 26, ${a * 1.5})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+  }
+
+  const leftGrad = ctx.createLinearGradient(0, 0, 80, 0);
+  leftGrad.addColorStop(0, 'rgba(92, 14, 14, 0.4)');
+  leftGrad.addColorStop(1, 'rgba(92, 14, 14, 0)');
+  ctx.fillStyle = leftGrad;
+  ctx.fillRect(0, 0, 80, H);
+
+  time += 0.008;
+  requestAnimationFrame(drawBg);
+}
+
+window.addEventListener('resize', () => { resize(); initParticles(); });
+resize();
+initParticles();
+drawBg();
+</script>
+</body>
+</html>
