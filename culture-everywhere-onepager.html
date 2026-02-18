@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culture Everywhere — Community Intelligence Museum</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink: #1A1410;
+  --paper: #FAFAF8;
+  --red: #8C1C13;
+  --gold: #B8952A;
+  --rule: #D4C5A9;
+  --mid: #666;
+  --serif: 'Playfair Display', Georgia, serif;
+  --mono: 'DM Mono', monospace;
+}
+
+body {
+  background: #e8e4dc;
+  font-family: var(--mono);
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* ── PAGE ── */
+.page {
+  width: 8.5in;
+  min-height: 11in;
+  background: var(--paper);
+  padding: 0.6in 0.65in 0.55in;
+  position: relative;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.25);
+}
+
+/* ── MASTHEAD ── */
+.mast {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.14in;
+}
+
+.mast-left h1 {
+  font-family: var(--serif);
+  font-size: 36pt;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 3pt;
+}
+
+.mast-left .sub {
+  font-family: var(--serif);
+  font-size: 13pt;
+  font-style: italic;
+  color: var(--red);
+}
+
+.mast-right {
+  text-align: right;
+  font-size: 7.5pt;
+  letter-spacing: 0.05em;
+  color: var(--mid);
+  line-height: 1.9;
+}
+
+.mast-right strong {
+  color: var(--ink);
+  font-weight: 500;
+  display: block;
+}
+
+.rule {
+  height: 3px;
+  background: var(--red);
+  margin-bottom: 0.15in;
+}
+
+.rule-gold {
+  height: 1px;
+  background: var(--gold);
+  margin: 0.13in 0;
+}
+
+/* ── PHOTO GRID ── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: 1.05in 1.05in;
+  gap: 3px;
+  margin-bottom: 0.13in;
+}
+
+.photo {
+  overflow: hidden;
+  position: relative;
+  background: #c8c0b0;
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: sepia(0.12) contrast(1.05);
+}
+
+.photo.tall {
+  grid-row: span 2;
+}
+
+.photo-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 7px;
+  background: linear-gradient(to top, rgba(26,20,16,0.88), transparent);
+  font-size: 5.5pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  font-family: var(--mono);
+}
+
+/* ── TWO COLS ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.22in;
+}
+
+.col-rule {
+  border-right: 1px solid var(--rule);
+  padding-right: 0.22in;
+}
+
+/* ── SECTION ── */
+.section-head {
+  font-size: 6pt;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  margin-bottom: 4pt;
+  display: flex;
+  align-items: center;
+  gap: 6pt;
+}
+
+.section-head::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(184,149,42,0.25);
+}
+
+p.body {
+  font-size: 8pt;
+  line-height: 1.72;
+  color: #2a2522;
+  margin-bottom: 7pt;
+}
+
+p.body:last-child { margin-bottom: 0; }
+
+/* ── STAT ROW ── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  margin-bottom: 0.13in;
+}
+
+.stat-cell {
+  background: #F0EBE0;
+  padding: 8pt 10pt;
+  border-top: 2px solid var(--red);
+}
+
+.stat-num {
+  font-family: var(--serif);
+  font-size: 22pt;
+  font-weight: 700;
+  color: var(--red);
+  line-height: 1;
+  margin-bottom: 2pt;
+}
+
+.stat-label {
+  font-size: 5.5pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 500;
+  margin-bottom: 1pt;
+}
+
+.stat-note {
+  font-size: 6pt;
+  color: var(--mid);
+  line-height: 1.45;
+  font-style: italic;
+}
+
+/* ── BOTTOM PHOTO STRIP ── */
+.photo-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  height: 0.85in;
+  margin-bottom: 0.13in;
+}
+
+.photo-strip .photo { height: 0.85in; }
+
+/* ── CLOSING STATEMENT ── */
+.closing {
+  background: var(--ink);
+  padding: 10pt 14pt;
+  margin-bottom: 0.1in;
+}
+
+.closing p {
+  font-family: var(--serif);
+  font-size: 9.5pt;
+  font-style: italic;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.7;
+}
+
+.closing p em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+/* ── FOOTER ── */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 6pt;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #aaa;
+}
+
+.footer a { color: var(--gold); text-decoration: none; }
+
+/* ── PRINT ── */
+@media print {
+  body { background: none; padding: 0; }
+  .page { box-shadow: none; margin: 0; }
+  @page { size: letter; margin: 0; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- MASTHEAD -->
+  <div class="mast">
+    <div class="mast-left">
+      <h1>Culture Everywhere</h1>
+      <div class="sub">The Community Intelligence Museum</div>
+    </div>
+    <div class="mast-right">
+      <strong>Mark Walhimer</strong>
+      Museum Planning LLC<br>
+      New York · Mexico City<br>
+      museumplanning.com<br>
+      February 2026
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <!-- HERO PHOTO GRID — real photos from museumplanning.com -->
+  <div class="photo-grid">
+    <div class="photo tall">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A3857-1030x687.jpg" alt="C.O. Polk Museum exterior">
+      <div class="photo-label">C.O. Polk Interactive Museum · McDonough, Georgia · Opened 2019</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A3754-1030x687.jpg" alt="Projection mapping">
+      <div class="photo-label">Town Square · Projection Mapping</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A3963-1030x687.jpg" alt="Touch table">
+      <div class="photo-label">Object Recognition Touch Table</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A3760-1030x687.jpg" alt="Hologram mayor">
+      <div class="photo-label">Holographic Mayor · Tour Guide</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A3684-1030x687.jpg" alt="Kids area">
+      <div class="photo-label">Kids Maker Area · 3D Printer</div>
+    </div>
+  </div>
+
+  <!-- STAT ROW -->
+  <div class="stat-row">
+    <div class="stat-cell">
+      <div class="stat-num">1,800</div>
+      <div class="stat-label">Square Feet</div>
+      <div class="stat-note">Full museum, former post office</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">$327</div>
+      <div class="stat-label">Per Sq Ft</div>
+      <div class="stat-note">Exhibition fabrication cost</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">18 mo</div>
+      <div class="stat-label">Delivery</div>
+      <div class="stat-note">Concept to opening day</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">30K</div>
+      <div class="stat-label">Cities</div>
+      <div class="stat-note">US communities with civic buildings and no model</div>
+    </div>
+  </div>
+
+  <!-- TWO COLUMNS -->
+  <div class="two-col" style="margin-bottom: 0.13in;">
+
+    <div class="col-rule">
+      <div class="section-head">The Market Gap</div>
+      <p class="body">There are roughly 200 destination museums in America — $80M institutions with endowments, architecture, and international draw. They will continue to thrive. Below them: 30,000 cities and county seats with a courthouse on a square, a civic building that used to be a post office, a city manager who wants to leave something behind, and no model that fits their scale.</p>
+      <p class="body">The standard response — hire a consulting firm, wait three years, spend $8M — doesn't work for a city of 30,000 people. What works is a different model entirely. Smaller. Faster. Smarter. Maintainable from a distance.</p>
+
+      <div class="section-head" style="margin-top: 8pt;">The Physical Experience</div>
+      <p class="body">Exterior projection mapping on the building facade. A hero video wall. Holographic figures. Projection-mapped interactive scale models. Touch tables with object recognition. A local art gallery. Historic artifact displays. A kids maker area with a 3D printer — no screens, just hands. Community conference space. Every component proven, replicable, and now cheaper than 2019.</p>
+    </div>
+
+    <div>
+      <div class="section-head">The Intelligence Layer</div>
+      <p class="body">AI that has absorbed the place — 200 years of public archives, historic photographs, demographic data, local knowledge, contested stories reviewed by community stakeholders — speaks the city back to itself. Visitors ask anything. Schools use it daily. Remote visitors access it from home. The AI updates as the city changes.</p>
+      <p class="body">This is the layer that didn't exist in 2019. It makes the whole system dramatically more powerful and dramatically less expensive to maintain.</p>
+
+      <div class="section-head" style="margin-top: 8pt;">The Business Model</div>
+      <p class="body"><strong style="color: #1A1410;">Design & Build:</strong> Turn-key delivery, concept to opening. <strong style="color: #1A1410;">Service Contract:</strong> Local AV vendors — the same firms maintaining hotel lobbies and corporate signage — take the hardware contract. Museum Planning LLC provides remote content updates. <strong style="color: #1A1410;">Adjacent Markets:</strong> Hotels (lobby history of place). Corporations (brand heritage rooms). Restaurants (neighborhood story). City halls. The museum model applies everywhere community identity has commercial value.</p>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM PHOTO STRIP -->
+  <div class="photo-strip">
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A6477-1030x687.jpg" alt="Jean Charlot mural">
+      <div class="photo-label">Jean Charlot Mural · 1942 WPA</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A3588-1030x687.jpg" alt="Photo gallery">
+      <div class="photo-label">Historic Photographs Gallery</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/003_Exterior5-1-773x1030.jpg" alt="Exterior night">
+      <div class="photo-label">Exterior · Night Signage</div>
+    </div>
+    <div class="photo">
+      <img src="https://i0.wp.com/museumplanning.com/wp-content/uploads/2019/07/JT2A6511-copy-1030x687.jpg" alt="Mini mayor hologram">
+      <div class="photo-label">Mini Mayor · Hologram</div>
+    </div>
+  </div>
+
+  <!-- CLOSING -->
+  <div class="closing">
+    <p>The sales instrument is the demo itself. Every city gets a personalized link — their courthouse photographs, their character described in their own language, their history typed out in real time — before a single meeting is scheduled. No feasibility study. No proposal. Just: <em>here is what your museum looks like, and we built it this afternoon.</em></p>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>Museum Planning LLC · New York · Mexico City</span>
+    <span><a href="https://museumplanning.com">museumplanning.com</a> · <a href="https://culture-planning.com">culture-planning.com</a></span>
+    <span>© 2026 · Confidential</span>
+  </div>
+
+</div>
+</body>
+</html>
